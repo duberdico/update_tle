@@ -7,7 +7,7 @@ from contextlib import closing
 
 import sqlite3
 
-GROUPS = ["stations", "noaa", "goes"]
+GROUPS = ['weather','geo','gnss','satnogs','science','cubesat','radar','military','stations']
 URL = "https://celestrak.org/NORAD/elements/gp.php"
 CREATE_TABLE_SQL = 'CREATE TABLE IF NOT EXISTS "tle" ( "name" TEXT PRIMARY KEY, "other_name" TEXT, "status" TEXT, "l1" TEXT, "l2" TEXT, "station_group" TEXT, "updated_utc" TEXT);'
 DBFILE = os.getenv('TLE_DATABASE')
@@ -34,7 +34,7 @@ def parse_TLE(data):
         else:
             tmp["status"] = ""
 
-        tmp["name"] = name.strip()
+        tmp["name"] = name.strip().replace("'","_")
 
         tmp["l1"] = lines[i + 1]
         tmp["l2"] = lines[i + 2]
