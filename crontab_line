@@ -1,0 +1,1 @@
+0 0 * * * /usr/bin/python3 /mnt/raid/src/update_tle/update_tle.py >> /var/log/update_tle.log 2>&1

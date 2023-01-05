@@ -55,21 +55,29 @@ def main():
         for group in GROUPS:
             print(f"downloading TLE data for group {group}")
             query_dict = {"GROUP": group.upper(), "FORMAT": "TLE"}
-            data = requests.get(URL, params=query_dict)
-            df = pd.DataFrame.from_dict(parse_TLE(data.text)).set_index("name")
-            df["station_group"] = group
-            df["updated_utc"] = pd.Timestamp.utcnow().strftime("%Y%m%dT%H%M%S")
-            print(f"...updating database")
-            with closing(conn.cursor()) as cursor:
-                for i, r in df.reset_index().iterrows():
-                    rdict = {k: f"'{v}'" for k, v in r.to_dict().items()}
-                    cs = [f"{x}" for x in rdict.keys()]
-                    sql = (
-                        f"INSERT OR REPLACE INTO tle ({','.join(cs)})\n"
-                        + f"VALUES ({','.join(rdict.values())});"
-                    )
-                    cursor.execute(sql)
-            conn.commit()
+            ret = requests.get(URL, params=query_dict)
+            if ret.status_code == 200:
+                try:
+                    data = parse_TLE(ret.text)
+                except:
+                    print("... cannot parse return data - aborting!")
+                    continue
+                df = pd.DataFrame.from_dict(data).set_index("name")
+                df["station_group"] = group
+                df["updated_utc"] = pd.Timestamp.utcnow().strftime("%Y%m%dT%H%M%S")
+                print(f"...updating database")
+                with closing(conn.cursor()) as cursor:
+                    for i, r in df.reset_index().iterrows():
+                        rdict = {k: f"'{v}'" for k, v in r.to_dict().items()}
+                        cs = [f"{x}" for x in rdict.keys()]
+                        sql = (
+                            f"INSERT OR REPLACE INTO tle ({','.join(cs)})\n"
+                            + f"VALUES ({','.join(rdict.values())});"
+                        )
+                        cursor.execute(sql)
+                conn.commit()
+            else:
+                print(f"... unable to retrieve data (status code {data.status_code})")
 
 
 if __name__ == "__main__":
